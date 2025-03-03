@@ -1,0 +1,137 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+    <div class="row">
+        <div class="col-md-8">
+            <h2>{{ listing.title }}</h2>
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+
+            {% if not listing.active %}
+                <div class="alert alert-warning">
+                    This auction has ended.
+                    {% if is_winner %}
+                        <strong>Congratulations! You have won this auction!</strong>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            <div class="mb-4">
+                {% if listing.image_url %}
+                    <img src="{{ listing.image_url }}" alt="{{ listing.title }}" class="img-fluid mb-3" style="max-height: 400px;">
+                {% endif %}
+                
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Description</h5>
+                        <p class="card-text">{{ listing.description }}</p>
+                    </div>
+                </div>
+                
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Details</h5>
+                        <p><strong>Current Price:</strong> ${{ listing.current_price }}</p>
+                        <p><strong>Listed by:</strong> {{ listing.creator }}</p>
+                        <p><strong>Category:</strong> {% if listing.category %}{{ listing.category }}{% else %}Not specified{% endif %}</p>
+                        <p><strong>Listed on:</strong> {{ listing.created_at|date }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            {% if user.is_authenticated %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Actions</h5>
+                        
+                        <form method="post" action="{% url 'toggle_watchlist' listing.id %}" class="mb-2">
+                            {% csrf_token %}
+                            {% if in_watchlist %}
+                                <button type="submit" class="btn btn-outline-danger btn-block">Remove from Watchlist</button>
+                            {% else %}
+                                <button type="submit" class="btn btn-outline-primary btn-block">Add to Watchlist</button>
+                            {% endif %}
+                        </form>
+                        
+                        {% if listing.active %}
+                            {% if is_owner %}
+                                <form method="post" action="{% url 'close_auction' listing.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-warning btn-block">Close Auction</button>
+                                </form>
+                            {% else %}
+                                <form method="post" action="{% url 'place_bid' listing.id %}" class="mb-2">
+                                    {% csrf_token %}
+                                    <div class="form-group">
+                                        <label for="amount">Your Bid (must be greater than ${{ listing.current_price }})</label>
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text">$</span>
+                                            </div>
+                                            <input type="number" class="form-control" id="amount" name="amount" step="0.01" min="{{ listing.current_price }}" required>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-success btn-block">Place Bid</button>
+                                </form>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+            
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Bid History</h5>
+                    <ul class="list-group">
+                        {% for bid in listing.bids.all|dictsortreversed:"timestamp" %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ bid.bidder }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ bid.timestamp|date:"M d, Y H:i" }}</small>
+                                </div>
+                                <span class="badge badge-primary badge-pill">${{ bid.amount }}</span>
+                            </li>
+                        {% empty %}
+                            <li class="list-group-item text-center">No bids yet</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mt-4">
+        <h3>Comments</h3>
+        
+        {% if user.is_authenticated %}
+            <form method="post" action="{% url 'add_comment' listing.id %}" class="mb-4">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="comment">Add a Comment</label>
+                    <textarea class="form-control" id="comment" name="comment" rows="3" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Post Comment</button>
+            </form>
+        {% endif %}
+        
+        <div class="comments">
+            {% for comment in comments %}
+                <div class="card mb-2">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">{{ comment.commenter }} - {{ comment.timestamp|date:"M d, Y H:i" }}</h6>
+                        <p class="card-text">{{ comment.text }}</p>
+                    </div>
+                </div>
+            {% empty %}
+                <p>No comments yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}

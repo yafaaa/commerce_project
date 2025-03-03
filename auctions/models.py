@@ -1,44 +1,62 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+
 class User(AbstractUser):
     pass
 
+
+class Category(models.Model):
+    name = models.CharField(max_length=64)
+
+    def __str__(self):
+        return self.name
+
+
 class Listing(models.Model):
-    CATEGORY_CHOICES = [
-        ('FASHION', 'Fashion'),
-        ('TOYS', 'Toys'),
-        ('ELECTRONICS', 'Electronics'),
-        ('HOME', 'Home'),
-        ('OTHER', 'Other'),
-    ]
-    
     title = models.CharField(max_length=64)
     description = models.TextField()
     starting_bid = models.DecimalField(max_digits=10, decimal_places=2)
-    image_url = models.URLField(blank=True)  # Optional field
-    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, blank=True)  # Optional field
+    image_url = models.URLField(blank=True)
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, blank=True, null=True, related_name="listings")
+    creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name="listings")
     created_at = models.DateTimeField(auto_now_add=True)
-    is_active = models.BooleanField(default=True)
-    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="listings")
-    
+    active = models.BooleanField(default=True)
+    winner = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name="won_listings")
+
+    def current_price(self):
+        bids = self.bids.all()
+        if bids:
+            return max(bid.amount for bid in bids)
+        return self.starting_bid
+        
     def __str__(self):
-        return f"{self.title} (${self.starting_bid})"
+        return f"{self.title}"
+
 
 class Bid(models.Model):
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    bidder = models.ForeignKey(User, on_delete=models.CASCADE, related_name="bids")
     listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="bids")
-    created_at = models.DateTimeField(auto_now_add=True)
-    
+    bidder = models.ForeignKey(User, on_delete=models.CASCADE, related_name="bids")
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
     def __str__(self):
-        return f"${self.amount} bid by {self.bidder.username} on {self.listing.title}"
+        return f"{self.bidder} bid ${self.amount} on {self.listing}"
+
 
 class Comment(models.Model):
-    text = models.TextField()
-    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="comments")
     listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="comments")
-    created_at = models.DateTimeField(auto_now_add=True)
-    
+    commenter = models.ForeignKey(User, on_delete=models.CASCADE, related_name="comments")
+    text = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
     def __str__(self):
-        return f"Comment by {self.author.username} on {self.listing.title}"
+        return f"{self.commenter} commented on {self.listing}"
+
+
+class Watchlist(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="watchlist")
+    listings = models.ManyToManyField(Listing, blank=True, related_name="watchers")
+
+    def __str__(self):
+        return f"{self.user}'s watchlist"
