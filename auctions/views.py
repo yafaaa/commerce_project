@@ -92,13 +92,13 @@ def create_listing(request):
         title = request.POST["title"]
         description = request.POST["description"]
         starting_bid = request.POST["starting_bid"]
-        image_url = request.POST["image_url"]
+        image_url = request.POST.get("image_url", "")
         
-        try:
-            category_id = int(request.POST["category"])
-            category = Category.objects.get(pk=category_id)
-        except (ValueError, Category.DoesNotExist):
-            category = None
+        # Get or create category if selected
+        category_name = request.POST.get("category", "")
+        category = None
+        if category_name:
+            category, _ = Category.objects.get_or_create(name=category_name)
         
         listing = Listing(
             title=title,
@@ -112,12 +112,12 @@ def create_listing(request):
         
         return HttpResponseRedirect(reverse("index"))
     else:
+        # Fetch all existing categories
         categories = Category.objects.all()
-        return render(request, "auctions/create.html", {
+        return render(request, "auctions/create_listing.html", {
             "categories": categories
         })
-
-
+    
 @login_required
 def watchlist(request):
     watchlist, created = Watchlist.objects.get_or_create(user=request.user)

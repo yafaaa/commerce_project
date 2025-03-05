@@ -7,7 +7,7 @@
         <div class="alert alert-danger">{{ message }}</div>
     {% endif %}
 
-    <form action="{% url 'create_listing' %}" method="post">
+    <form action="{% url 'create' %}" method="post">
         {% csrf_token %}
         <div class="form-group">
             <label for="title">Title</label>
@@ -29,11 +29,9 @@
             <label for="category">Category (optional)</label>
             <select class="form-control" id="category" name="category">
                 <option value="">Select a category (optional)</option>
-                <option value="FASHION">Fashion</option>
-                <option value="TOYS">Toys</option>
-                <option value="ELECTRONICS">Electronics</option>
-                <option value="HOME">Home</option>
-                <option value="OTHER">Other</option>
+                {% for category in categories %}
+                    <option value="{{ category.name }}">{{ category.name }}</option>
+                {% endfor %}
             </select>
         </div>
         <button type="submit" class="btn btn-primary">Create Listing</button>
