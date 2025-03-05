@@ -94,7 +94,6 @@ def create_listing(request):
         starting_bid = request.POST["starting_bid"]
         image_url = request.POST.get("image_url", "")
         
-        # Get or create category if selected
         category_name = request.POST.get("category", "")
         category = None
         if category_name:
