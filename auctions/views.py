@@ -77,7 +77,7 @@ def listing_detail(request, listing_id):
         watchlist, created = Watchlist.objects.get_or_create(user=request.user)
         in_watchlist = listing in watchlist.listings.all()
     
-    return render(request, "auctions/listing.html", {
+    return render(request, "auctions/listing_detail.html", {
         "listing": listing,
         "in_watchlist": in_watchlist,
         "comments": comments,
