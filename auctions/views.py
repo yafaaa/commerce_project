@@ -111,8 +111,13 @@ def create_listing(request):
         
         return HttpResponseRedirect(reverse("index"))
     else:
-        # Fetch all existing categories
-        categories = Category.objects.all()
+        categories = [
+            {"id": "FASHION", "name": "Fashion"},
+            {"id": "TOYS", "name": "Toys"},
+            {"id": "ELECTRONICS", "name": "Electronics"},
+            {"id": "HOME", "name": "Home"},
+            {"id": "OTHER", "name": "Other"}
+        ]
         return render(request, "auctions/create_listing.html", {
             "categories": categories
         })
