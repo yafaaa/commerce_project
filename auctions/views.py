@@ -212,7 +212,7 @@ def category(request, category_id):
     category = get_object_or_404(Category, pk=category_id)
     listings = category.listings.filter(active=True)
     
-    return render(request, "auctions/category.html", {
+    return render(request, "auctions/category_detail.html", {
         "category": category,
         "listings": listings
     })
